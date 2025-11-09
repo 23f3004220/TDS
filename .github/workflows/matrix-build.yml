@@ -1,0 +1,51 @@
+name: Matrix Build with Artifacts
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [14, 16, 18]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: matrix-19267cf
+        run: |
+          echo "Running matrix variant: node ${{ matrix.node-version }}"
+          echo "commit=$(git rev-parse --short HEAD || echo none)" > build-metadata.txt
+          echo "runner=$(uname -a)" >> build-metadata.txt
+          echo "node_version=${{ matrix.node-version }}" >> build-metadata.txt
+
+      - name: Install deps (no-op)
+        run: |
+          node -v
+          npm --version || true
+
+      - name: Generate build artifact
+        run: |
+          ARTFILE=build-output-node-${{ matrix.node-version }}.txt
+          echo "Build artifact for node ${{ matrix.node-version }}" > $ARTFILE
+          echo "Generated at: $(date -u)" >> $ARTFILE
+          cat build-metadata.txt >> $ARTFILE
+          echo "Sample output line to ensure file is non-empty" >> $ARTFILE
+          ls -l $ARTFILE
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-19267cf-node-${{ matrix.node-version }}
+          path: build-output-node-${{ matrix.node-version }}.txt
